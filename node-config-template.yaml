@@ -16,6 +16,54 @@ write_files:
           }
       }
 
+  # Kube config file. 
+  - path: /etc/kubernetes/worker-kubeconfig.yaml
+    owner: root
+    permissions: 0755
+    content: |
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: local
+        cluster:
+          certificate-authority: /etc/kubernetes/ssl/ca.pem
+      users:
+      - name: kubelet
+        user:
+          client-certificate: /etc/kubernetes/ssl/worker.pem
+          client-key: /etc/kubernetes/ssl/worker-key.pem
+      contexts:
+      - context:
+          cluster: local
+          user: kubelet
+        name: kubelet-context
+      current-context: kubelet-context
+
+  # Get certificates for the node. 
+  - path: /opt/bin/get-certs.sh
+    owner: root
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      WORKER_IP=$1
+      WORKER_FQDN=calico-${WORKER_IP}
+
+      # Get certificate authority and config file.
+      sudo mkdir -p /etc/kubernetes/ssl/
+      sudo wget -N -P /etc/kubernetes/ssl/ http://172.18.18.1:8000/ca.pem
+      sudo wget -N -P /etc/kubernetes/ssl/ http://172.18.18.1:8000/ca-key.pem
+      sudo wget -N -P /etc/kubernetes/ssl/ http://172.18.18.1:8000/worker-openssl.cnf
+
+      # Generate node keys.
+      cd /etc/kubernetes/ssl
+      openssl genrsa -out worker-key.pem 2048
+      WORKER_IP=${WORKER_IP} openssl req -new -key worker-key.pem -out worker.csr -subj "/CN=${WORKER_FQDN}" -config worker-openssl.cnf
+      WORKER_IP=${WORKER_IP} openssl x509 -req -in worker.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out worker.pem -days 365 -extensions v3_req -extfile worker-openssl.cnf
+      
+      # Set permissions.
+      sudo chmod 600 /etc/kubernetes/ssl/*-key.pem
+      sudo chown root:root /etc/kubernetes/ssl/*-key.pem
+
 coreos:
   etcd2:
     proxy: on 
@@ -61,7 +109,7 @@ coreos:
         Description=Kubernetes Kubelet
         Documentation=https://github.com/kubernetes/kubernetes
         After=docker.service
-        Requires=docker.service
+        Requires=docker.service get-certs.service
 
         [Service]
         ExecStartPre=/usr/bin/wget -N -P /opt/bin https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kubelet
@@ -76,9 +124,12 @@ coreos:
         --allow-privileged=true \
         --cluster-dns=10.100.0.10 \
         --cluster-domain=cluster.local \
-        --api-servers=http://172.18.18.101:8080 \
+        --api-servers=https://172.18.18.101 \
         --network-plugin-dir=/etc/cni/net.d \
         --network-plugin=cni \
+        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
+        --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
+        --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \
         --hostname-override=$private_ipv4 \
         --logtostderr=true
         Restart=always
@@ -99,8 +150,21 @@ coreos:
         ExecStartPre=/usr/bin/wget -N -P /opt/bin  https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kube-proxy
         ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-proxy
         ExecStart=/opt/bin/kube-proxy \
-        --master=http://172.18.18.101:8080 \
+        --master=https://172.18.18.101 \
         --proxy-mode=iptables \
+        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
         --logtostderr=true
         Restart=always
         RestartSec=10
+
+    - name: get-certs.service
+      runtime: true
+      command: start
+      content: |
+        [Unit]
+        Description=Install certificates
+        After=network-online.service
+        [Service]
+        ExecStart=/opt/bin/get-certs.sh $private_ipv4
+        RemainAfterExit=yes
+        Type=oneshot
