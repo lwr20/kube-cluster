@@ -1,6 +1,7 @@
+K8S_VERSION=1.1.3
+
 all: apply-node-labels deploy-pinger
 ssl-keys: admin.pem apiserver.pem 
-	
 
 # Creates a Kubernetes cluster which passes the k8s conformance tests.
 run:
