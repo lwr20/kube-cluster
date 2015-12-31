@@ -13,9 +13,19 @@ run:
 	make run-dns-pod            # Run DNS addon.
 	make run-kube-ui            # Run kube-ui addon.
 
-binaries: clean-binaries
+# Updates the calico-cni submodule and makes sure it is on the latest
+# master commit.
+update-submodule:
+	git submodule init
+	git submodule update
+	cd calico-cni && git checkout master
+	cd calico-cni && git pull origin master
+
+# Builds the latest calico-cni binaries.
+binaries: update-submodule clean-binaries
 	make -C calico-cni
 
+# Cleans the calico-cni submodule.
 clean-binaries:
 	make -C calico-cni clean
 
