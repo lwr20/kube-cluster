@@ -5,11 +5,15 @@ ssl-keys: admin.pem apiserver.pem
 
 # Creates a Kubernetes cluster which passes the k8s conformance tests.
 run:
+	make calico-cni-binaries
 	make clean-webserver
 	make create-cluster-vagrant
 	make kube-system
 	make run-dns-pod
 	make run-kube-ui
+
+calico-cni-binaries:
+	cd calico-cni && git checkout master && git pull origin master && make clean && make binary
 
 destroy-cluster-vagrant: 
 	-vagrant destroy -f

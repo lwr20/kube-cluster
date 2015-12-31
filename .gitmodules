@@ -1,0 +1,3 @@
+[submodule "calico-cni"]
+	path = calico-cni
+	url = git@github.com:projectcalico/calico-cni.git
