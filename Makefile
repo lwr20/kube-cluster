@@ -4,25 +4,19 @@ all: apply-node-labels deploy-pinger
 ssl-keys: admin.pem apiserver.pem 
 
 # Creates a Kubernetes cluster which passes the k8s conformance tests.
-run:
-	make binaries               # Make calico-cni binaries.
+cluster:
 	make clean-webserver        # Stop any existing webserver.
 	make clean-keys             # Remove any SSL keys.
+	make clean-kubectl	    # Remove old kubectl
+	make kubectl                # Get kubectl
+	make binaries               # Make calico-cni binaries.
 	make create-cluster-vagrant # Start the cluster.
 	make kube-system            # Create kube-system namespace.
 	make run-dns-pod            # Run DNS addon.
 	make run-kube-ui            # Run kube-ui addon.
 
-# Updates the calico-cni submodule and makes sure it is on the latest
-# master commit.
-update-submodule:
-	git submodule init
-	git submodule update
-	cd calico-cni && git checkout master
-	cd calico-cni && git pull origin master
-
 # Builds the latest calico-cni binaries.
-binaries: update-submodule clean-binaries
+binaries: 
 	make -C calico-cni
 
 # Cleans the calico-cni submodule.
@@ -44,8 +38,10 @@ clean-webserver: clean-keys
 generate-certs:
 	sudo openssl/create_keys.sh
 
+clean-kubectl:
+	rm -f kubectl
+
 kubectl: admin.pem
-	rm -f ./kubectl
 	wget http://storage.googleapis.com/kubernetes-release/release/v$(K8S_VERSION)/bin/linux/amd64/kubectl
 	chmod +x kubectl
 	./kubectl config set-cluster default-cluster --server=https://172.18.18.101 --certificate-authority=ca.pem
@@ -53,21 +49,21 @@ kubectl: admin.pem
 	./kubectl config set-context default-system --cluster=default-cluster --user=default-admin
 	./kubectl config use-context default-system
 
-remove-dns: kubectl
+remove-dns: 
 	./kubectl --namespace=kube-system delete rc kube-dns-v9
 	./kubectl --namespace=kube-system delete svc kube-dns
 
-run-dns-pod:  kubectl
+run-dns-pod:
 	./kubectl create -f dns/dns-addon.yaml
 
-remove-kube-ui: kubectl
+remove-kube-ui:
 	./kubectl --namespace=kube-system delete rc kube-ui-v4
 	./kubectl --namespace=kube-system delete svc kube-ui
 
-run-kube-ui: kubectl
+run-kube-ui: 
 	./kubectl create -f kube-ui/
 
-kube-system: kubectl
+kube-system:
 	./kubectl create -f namespaces/kube-system.yaml
 
 calicoctl:
