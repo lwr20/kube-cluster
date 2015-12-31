@@ -6,7 +6,6 @@ ssl-keys: admin.pem apiserver.pem
 # Creates a Kubernetes cluster which passes the k8s conformance tests.
 run:
 	make clean-webserver
-	make kubectl
 	make create-cluster-vagrant
 	make kube-system
 	make run-dns-pod
@@ -36,21 +35,21 @@ kubectl: admin.pem
 	./kubectl config set-context default-system --cluster=default-cluster --user=default-admin
 	./kubectl config use-context default-system
 
-remove-dns:
+remove-dns: kubectl
 	./kubectl --namespace=kube-system delete rc kube-dns-v9
 	./kubectl --namespace=kube-system delete svc kube-dns
 
-run-dns-pod: 
+run-dns-pod:  kubectl
 	./kubectl create -f dns/dns-addon.yaml
 
-remove-kube-ui:
+remove-kube-ui: kubectl
 	./kubectl --namespace=kube-system delete rc kube-ui-v4
 	./kubectl --namespace=kube-system delete svc kube-ui
 
-run-kube-ui:
+run-kube-ui: kubectl
 	./kubectl create -f kube-ui/
 
-kube-system:
+kube-system: kubectl
 	./kubectl create -f namespaces/kube-system.yaml
 
 calicoctl:
