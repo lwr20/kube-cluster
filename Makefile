@@ -2,18 +2,20 @@ all: apply-node-labels deploy-pinger
 ssl-keys: admin.pem apiserver.pem 
 	
 
-destroy-cluster-vagrant: 
-	-vagrant destroy -f
-
-create-cluster-vagrant: destroy-cluster-vagrant webserver
-	vagrant up
-
+# Creates a Kubernetes cluster which passes the k8s conformance tests.
 run:
 	make clean-webserver
 	make kubectl
 	make create-cluster-vagrant
 	make kube-system
 	make run-dns-pod
+	make run-kube-ui
+
+destroy-cluster-vagrant: 
+	-vagrant destroy -f
+
+create-cluster-vagrant: destroy-cluster-vagrant webserver
+	vagrant up
 
 webserver: ssl-keys
 	python -m SimpleHTTPServer &
@@ -39,6 +41,13 @@ remove-dns:
 
 run-dns-pod: 
 	./kubectl create -f dns/dns-addon.yaml
+
+remove-kube-ui:
+	./kubectl --namespace=kube-system delete rc kube-ui-v4
+	./kubectl --namespace=kube-system delete svc kube-ui
+
+run-kube-ui:
+	./kubectl create -f kube-ui/
 
 kube-system:
 	./kubectl create -f namespaces/kube-system.yaml
