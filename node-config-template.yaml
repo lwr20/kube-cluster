@@ -92,7 +92,7 @@ coreos:
         User=root
         Environment="ETCD_AUTHORITY=172.18.18.101:2379"
         PermissionsStartOnly=true
-        ExecStartPre=/usr/bin/wget -N -P /opt/bin https://github.com/projectcalico/calico-containers/releases/download/v0.13.0/calicoctl 
+        ExecStartPre=/usr/bin/wget -N -P /opt/bin https://github.com/projectcalico/calico-containers/releases/download/v0.14.0/calicoctl 
         ExecStartPre=/usr/bin/chmod +x /opt/bin/calicoctl
         ExecStart=/opt/bin/calicoctl node --detach=false
         Restart=always
@@ -115,9 +115,7 @@ coreos:
         ExecStartPre=/usr/bin/wget -N -P /opt/bin https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kubelet
         ExecStartPre=/usr/bin/chmod +x /opt/bin/kubelet
         ExecStartPre=/usr/bin/wget -N -P /opt/cni/bin http://172.18.18.1:8000/calico-cni/dist/calico 
-        ExecStartPre=/usr/bin/wget -N -P /opt/cni/bin http://172.18.18.1:8000/calico-cni/dist/calico-ipam 
         ExecStartPre=/usr/bin/chmod +x /opt/cni/bin/calico
-        ExecStartPre=/usr/bin/chmod +x /opt/cni/bin/calico-ipam
         ExecStart=/opt/bin/kubelet \
         --port=10250 \
         --address=0.0.0.0 \
