@@ -16,6 +16,16 @@ write_files:
           }
       }
 
+  # Environment file.
+  - path: /etc/systemd.env
+    owner: root
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      CALICO_BINARY_LOC=http://172.18.18.1:8000/calico-cni/dist
+      KUBE_BINARY_LOC=http://172.18.18.1:8000/kubernetes/_output/dockerized/bin/linux/amd64
+      CERT_LOC=http://172.18.18.1:8000
+
   # Kube config file. 
   - path: /etc/kubernetes/worker-kubeconfig.yaml
     owner: root
@@ -50,9 +60,9 @@ write_files:
 
       # Get certificate authority and config file.
       sudo mkdir -p /etc/kubernetes/ssl/
-      sudo wget -N -P /etc/kubernetes/ssl/ http://172.18.18.1:8000/ca.pem
-      sudo wget -N -P /etc/kubernetes/ssl/ http://172.18.18.1:8000/ca-key.pem
-      sudo wget -N -P /etc/kubernetes/ssl/ http://172.18.18.1:8000/worker-openssl.cnf
+      sudo wget -N -P /etc/kubernetes/ssl/ ${CERT_LOC}/ca.pem
+      sudo wget -N -P /etc/kubernetes/ssl/ ${CERT_LOC}/ca-key.pem
+      sudo wget -N -P /etc/kubernetes/ssl/ ${CERT_LOC}/worker-openssl.cnf
 
       # Generate node keys.
       cd /etc/kubernetes/ssl
@@ -108,13 +118,14 @@ coreos:
         [Unit]
         Description=Kubernetes Kubelet
         Documentation=https://github.com/kubernetes/kubernetes
-        After=docker.service
+        After=docker.service get-certs.service
         Requires=docker.service get-certs.service
 
         [Service]
-        ExecStartPre=/usr/bin/wget -N -P /opt/bin https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kubelet
+        EnvironmentFile=/etc/systemd.env
+        ExecStartPre=/usr/bin/wget -N -P /opt/bin ${KUBE_BINARY_LOC}/kubelet
         ExecStartPre=/usr/bin/chmod +x /opt/bin/kubelet
-        ExecStartPre=/usr/bin/wget -N -P /opt/cni/bin http://172.18.18.1:8000/calico-cni/dist/calico 
+        ExecStartPre=/usr/bin/wget -N -P /opt/cni/bin ${CALICO_BINARY_LOC}/calico 
         ExecStartPre=/usr/bin/chmod +x /opt/cni/bin/calico
         ExecStart=/opt/bin/kubelet \
         --port=10250 \
@@ -145,7 +156,8 @@ coreos:
         Requires=kubelet.service
         After=kubelet.service
         [Service]
-        ExecStartPre=/usr/bin/wget -N -P /opt/bin  https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kube-proxy
+        EnvironmentFile=/etc/systemd.env
+        ExecStartPre=/usr/bin/wget -N -P /opt/bin ${KUBE_BINARY_LOC}/kube-proxy
         ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-proxy
         ExecStart=/opt/bin/kube-proxy \
         --master=https://172.18.18.101 \
@@ -163,6 +175,7 @@ coreos:
         Description=Install certificates
         After=network-online.service
         [Service]
+        EnvironmentFile=/etc/systemd.env
         ExecStart=/opt/bin/get-certs.sh $private_ipv4
         RemainAfterExit=yes
         Type=oneshot

@@ -1,3 +1,6 @@
 [submodule "calico-cni"]
 	path = calico-cni
 	url = https://github.com/projectcalico/calico-cni.git
+[submodule "kubernetes"]
+	path = kubernetes
+	url = https://github.com/kubernetes/kubernetes.git

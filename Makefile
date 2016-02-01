@@ -1,74 +1,86 @@
-K8S_VERSION=1.1.3
+.PHONY: binaries
 
-all: apply-node-labels deploy-pinger
 ssl-keys: admin.pem apiserver.pem 
+binaries: kubernetes/_output/dockerized/bin/linux/amd64 calico-cni/dist
+clean-binaries: clean-calico-plugin clean-kubernetes
+
 
 # Creates a Kubernetes cluster which passes the k8s conformance tests.
 cluster:
+	# Clean first.
 	make clean-webserver        # Stop any existing webserver.
 	make clean-keys             # Remove any SSL keys.
-	make clean-kubectl	    # Remove old kubectl
+	# Ensure binaries exist. 
+	make calico-cni/dist
+	make kubernetes/_output/dockerized/bin/linux/amd64
 	make kubectl                # Get kubectl
-	make binaries               # Make calico-cni binaries.
-	make create-cluster-vagrant # Start the cluster.
+	# Deploy VMS
+	make create-cluster-vagrant 
+	# Deploy kubernetes apps.
 	make kube-system            # Create kube-system namespace.
 	make run-dns-pod            # Run DNS addon.
 	make run-kube-ui            # Run kube-ui addon.
 
-# Builds the latest calico-cni binaries.
-binaries: 
-	make -C calico-cni
+# Cleans the Kubernetes binaries.
+clean-kubernetes:
+	make -C kubernetes clean
 
-# Cleans the calico-cni submodule.
-clean-binaries:
+# Builds Kubernetes binaries.
+kubernetes/_output/dockerized/bin/linux/amd64:
+	make -C kubernetes quick-release
+
+# Cleans the calico-cni plugin.
+clean-calico-plugin:
 	make -C calico-cni clean
 
-destroy-cluster-vagrant: 
+# Builds calico-cni plugin.
+calico-cni/dist:
+	make -C calico-cni
+
+# Destroys all vagrant machines.
+destroy-cluster-vagrant: clean-webserver 
 	-vagrant destroy -f
 
+# Runs vagrant in order to create the VMs necessary for the cluster.
 create-cluster-vagrant: destroy-cluster-vagrant webserver
 	vagrant up
 
+# Creates a local webserver used by cloud-init to retrieve binaries
+# from the host.
 webserver: ssl-keys
 	python -m SimpleHTTPServer &
 
+# Tears down the local webserver used by cloud-init to retrieve binaries
+# from the host.
 clean-webserver: clean-keys
 	(sudo killall python) || echo "Server not running"
 
+# Generates CA / master certifications for Kubernetes.
 generate-certs:
 	sudo openssl/create_keys.sh
 
+# Removes kubectl.
 clean-kubectl:
 	rm -f kubectl
 
-kubectl: admin.pem
-	wget http://storage.googleapis.com/kubernetes-release/release/v$(K8S_VERSION)/bin/linux/amd64/kubectl
+kubectl: admin.pem kubernetes/_output/dockerized/bin/linux/amd64
+	cp kubernetes/_output/dockerized/bin/linux/amd64/kubectl .
 	chmod +x kubectl
+
+configure-kubectl: kubectl
 	./kubectl config set-cluster default-cluster --server=https://172.18.18.101 --certificate-authority=ca.pem
 	./kubectl config set-credentials default-admin --certificate-authority=ca.pem --client-key=admin-key.pem --client-certificate=admin.pem
 	./kubectl config set-context default-system --cluster=default-cluster --user=default-admin
 	./kubectl config use-context default-system
 
-remove-dns: 
-	./kubectl --namespace=kube-system delete rc kube-dns-v9
-	./kubectl --namespace=kube-system delete svc kube-dns
+run-dns-pod: kube-system
+	./kubectl create -f dns/dns-addon.yaml || echo "Unable to run DNS.  Already running?"
 
-run-dns-pod:
-	./kubectl create -f dns/dns-addon.yaml
-
-remove-kube-ui:
-	./kubectl --namespace=kube-system delete rc kube-ui-v4
-	./kubectl --namespace=kube-system delete svc kube-ui
-
-run-kube-ui: 
-	./kubectl create -f kube-ui/
+run-kube-ui: kube-system
+	./kubectl create -f kube-ui/ || echo "Unable to run kube-ui.  Already running?"
 
 kube-system:
-	./kubectl create -f namespaces/kube-system.yaml
-
-calicoctl:
-	wget http://www.projectcalico.org/builds/calicoctl
-	chmod +x calicoctl
+	./kubectl create -f namespaces/kube-system.yaml || echo "Unable to create kube-system namespace. Already running?"
 
 deploy-heapster: remove-heapster
 	kubectl create -f heapster
@@ -99,9 +111,6 @@ deploy-pinger: remove-pinger
 
 remove-pinger:
 	-kubectl delete rc pinger --grace-period=1
-
-scale-pinger:
-	kubectl scale --replicas=20 rc/pinger
 
 launch-firefox:
 	firefox 'http://172.18.18.101:8080/api/v1/proxy/namespaces/default/services/monitoring-grafana/'
@@ -139,4 +148,4 @@ ${LOG_RETRIEVAL_TARGETS}: job%:
 	mkdir -p timings
 	ssh -F vagrant-ssh calico-$* grep TIMING  /var/log/calico/kubernetes/calico.log | grep -v status > timings/calico-$*.log
 
-.PHONEY: ${LOG_RETRIEVAL_TARGETS}
+.PHONY: ${LOG_RETRIEVAL_TARGETS}

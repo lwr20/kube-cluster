@@ -7,3 +7,4 @@ vagrant-ssh
 *.csr
 *.srl
 kubectl
+*.swp
