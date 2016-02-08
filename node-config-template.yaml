@@ -13,6 +13,9 @@ write_files:
           "log_level": "info",
           "ipam": {
               "type": "calico-ipam"
+          },
+          "policy": {
+              "type": "none"
           }
       }
 

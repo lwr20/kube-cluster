@@ -17,7 +17,7 @@ cluster:
 
 # Builds the latest calico-cni binaries.
 binaries: 
-	make -C calico-cni
+	make -C calico-cni binary
 
 # Cleans the calico-cni submodule.
 clean-binaries:
