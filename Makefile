@@ -14,6 +14,8 @@ cluster:
 	make kube-system            # Create kube-system namespace.
 	make run-dns-pod            # Run DNS addon.
 	make run-kube-ui            # Run kube-ui addon.
+	make install-net-policy     # Allow NetworkPolicy API objects.
+	make install-policy-agent   # Install Calico policy agent.
 
 # Builds the latest calico-cni binaries.
 binaries: 
@@ -65,6 +67,12 @@ run-kube-ui:
 
 kube-system:
 	./kubectl create -f namespaces/kube-system.yaml
+
+install-net-policy:
+	./kubectl create --validate=false -f 3rdparty/NetworkPolicy.yaml 
+
+install-policy-agent:
+	./kubectl create -f 3rdparty/calico-policy-rc.yaml
 
 calicoctl:
 	wget http://www.projectcalico.org/builds/calicoctl
