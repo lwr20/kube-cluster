@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: calico-policy-agent
+  namespace: default 
+  labels:
+    version: v1
+    projectcalico.org/app: "policy-agent"
+spec:
+  replicas: 1
+  selector:
+    version: v1
+    projectcalico.org/app: "policy-agent"
+  template:
+    metadata:
+      labels:
+        version: v1
+        projectcalico.org/app: "policy-agent"
+    spec:
+      volumes:
+      - hostPath:
+          path: /var/log/calico/kubernetes/policy-agent/
+        name: logdir
+      containers:
+        - name: policyagent
+          image: calico/k8s-policy-agent
+          imagePullPolicy: Always
+          env:
+          - name: ETCD_AUTHORITY
+            value: "172.18.18.101:2379"
+          - name: K8S_AUTH_TOKEN
+            value: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tc3hwNTgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjBiYzVkZTllLWNmNTctMTFlNS1hZGE2LTA4MDAyNzY4NDU2NyIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.N0XfbWTcTkIQyt8lYYk3KP-qDrQ_5KFOgQ_zc_q5a2C3GR2ZwBQFTVmHlUc846WzHysGwIkyvjrSYDuPt6aFoXUH6ReNyODZWhs8ef30cCtMVatwK0xh9Xrm-Xiob9bHowxtaMtX-YoEqdPXuUW4hnCQuOi5MLJdjz4ZZUgRHuWi56rEVzj7cSHH1i_UPipOhk-XcMvgeXWbiZ6ufDZ4NFSkHw3ITnksBaozSlN6WAVbHs-3Ga49DLT7lhDAE9F1Q7RSizhftlscPW_oAqqUetNAom_9VeTCIgFxlXARepyUSmPEo8HqTZ857HY4kx8ECTljpw2keoQyQ5zR1Dlxkw"
+          resources:
+            limits:
+              cpu: 100m
+              memory: 50Mi
