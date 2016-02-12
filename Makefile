@@ -1,4 +1,4 @@
-K8S_VERSION=1.1.3
+K8S_VERSION=1.2.0-alpha.7
 
 all: apply-node-labels deploy-pinger
 ssl-keys: admin.pem apiserver.pem 
