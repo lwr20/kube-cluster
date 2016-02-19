@@ -1,4 +1,5 @@
 K8S_VERSION=1.1.3
+OS=darwin
 
 all: apply-node-labels deploy-pinger
 ssl-keys: admin.pem apiserver.pem 
@@ -43,7 +44,7 @@ clean-kubectl:
 	rm -f kubectl
 
 kubectl: admin.pem
-	wget http://storage.googleapis.com/kubernetes-release/release/v$(K8S_VERSION)/bin/linux/amd64/kubectl
+	wget http://storage.googleapis.com/kubernetes-release/release/v$(K8S_VERSION)/bin/$(OS)/amd64/kubectl
 	chmod +x kubectl
 	./kubectl config set-cluster default-cluster --server=https://172.18.18.101 --certificate-authority=ca.pem
 	./kubectl config set-credentials default-admin --certificate-authority=ca.pem --client-key=admin-key.pem --client-certificate=admin.pem

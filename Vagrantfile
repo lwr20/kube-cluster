@@ -5,7 +5,7 @@ num_instances=4
 instance_name_prefix="calico"
 
 # Official CoreOS channel from which updates should be downloaded
-update_channel='alpha'
+update_channel='stable'
 
 Vagrant.configure("2") do |config|
   # always use Vagrants insecure key
