@@ -1,5 +1,5 @@
 # Size of the cluster created by Vagrant
-num_instances=4
+num_instances=3
 
 # Change basename of the VM
 instance_name_prefix="calico"
@@ -18,8 +18,8 @@ Vagrant.configure("2") do |config|
     # On VirtualBox, we don't have guest additions or a functional vboxsf
     # in CoreOS, so tell Vagrant that so it can be smarter.
     v.check_guest_additions = false
-    v.memory = 4096
-    v.cpus = 4
+    v.memory = 2048 
+    v.cpus = 2
     v.functional_vboxsf     = false
   end
 
@@ -35,8 +35,8 @@ Vagrant.configure("2") do |config|
       # Use a different cloud-init on the first server.
       if i == 1
 	config.vm.provider :virtualbox do |v|
-	  v.memory = 4096
-	  v.cpus = 4
+	  v.memory = 1024
+	  v.cpus = 2
 	end
 	host.vm.provision :docker, images: ["busybox:latest", "gcr.io/google_containers/pause:0.8.0"]
         host.vm.provision :file, :source => "master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
