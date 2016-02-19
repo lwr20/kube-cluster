@@ -15,7 +15,6 @@ cluster:
 	make run-dns-pod            # Run DNS addon.
 	make run-kube-ui            # Run kube-ui addon.
 	make install-net-policy     # Allow NetworkPolicy API objects.
-	make install-policy-agent   # Install Calico policy agent.
 
 # Builds the latest calico-cni binaries.
 binaries: 
