@@ -97,7 +97,7 @@ coreos:
         PermissionsStartOnly=true
         ExecStartPre=/usr/bin/wget -N -P /opt/bin https://github.com/projectcalico/calico-containers/releases/download/v0.16.1/calicoctl 
         ExecStartPre=/usr/bin/chmod +x /opt/bin/calicoctl
-        ExecStart=/opt/bin/calicoctl node --detach=false --node-image=caseydavenport/node:policy
+        ExecStart=/opt/bin/calicoctl node --detach=false --node-image=caseydavenport/node
         Restart=always
         RestartSec=10
 
