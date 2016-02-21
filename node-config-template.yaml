@@ -15,7 +15,7 @@ write_files:
               "type": "calico-ipam"
           },
           "policy": {
-              "type": "none"
+              "type": "default-deny-inbound"
           }
       }
 
@@ -115,7 +115,7 @@ coreos:
         Requires=docker.service get-certs.service
 
         [Service]
-        ExecStartPre=/usr/bin/wget -N -P /opt/bin https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kubelet
+        ExecStartPre=/usr/bin/wget -N -P /opt/bin https://storage.googleapis.com/kubernetes-release/release/v1.2.0-alpha.8/bin/linux/amd64/kubelet
         ExecStartPre=/usr/bin/chmod +x /opt/bin/kubelet
         ExecStartPre=/usr/bin/wget -N -P /opt/cni/bin http://172.18.18.1:8000/calico-cni/dist/calico 
         ExecStartPre=/usr/bin/chmod +x /opt/cni/bin/calico
@@ -148,7 +148,7 @@ coreos:
         Requires=kubelet.service
         After=kubelet.service
         [Service]
-        ExecStartPre=/usr/bin/wget -N -P /opt/bin  https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kube-proxy
+        ExecStartPre=/usr/bin/wget -N -P /opt/bin  https://storage.googleapis.com/kubernetes-release/release/v1.2.0-alpha.8/bin/linux/amd64/kube-proxy
         ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-proxy
         ExecStart=/opt/bin/kube-proxy \
         --master=https://172.18.18.101 \
