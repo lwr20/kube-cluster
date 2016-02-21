@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: calico-node 
+  namespace: calico-system
+spec:
+  template:
+    metadata:
+      labels:
+        name: calico-node 
+    spec:
+      nodeSelector:
+      hostNetwork: true
+      containers:
+        - env:
+            - name: ETCD_AUTHORITY 
+              value: 172.18.18.101:2379 
+            - name: FELIX_ETCDADDR 
+              value: 172.18.18.101:2379 
+            - name: FELIX_ETCDSCHEME
+              value: http 
+            - name: hostname 
+              value: my-host
+            - name: IP 
+              value: 127.0.0.1
+            - name: IP6 
+              value: "" 
+          image: calico/node:latest 
+          name: calico-node 
+          volumeMounts:
+            - mountPath: /var/run/calico
+              name: var-run-calico 
+            - mountPath: /var/log/calico
+              name: var-log-calico 
+      volumes:
+        - name: var-run-calico 
+          hostPath:
+            path: /var/run/calico
+        - name: var-log-calico 
+          hostPath:
+            path: /var/log/calico
