@@ -70,10 +70,7 @@ kube-system:
 
 install-net-policy:
 	./kubectl create --validate=false -f 3rdparty/NetworkPolicy.yaml 
-	./kubectl create -f 3rdparty/calico-policy-services.yaml
-
-install-policy-agent:
-	./kubectl create -f 3rdparty/calico-policy-rc.yaml
+	./kubectl create -f calico/calico-policy-services.yaml
 
 calicoctl:
 	wget http://www.projectcalico.org/builds/calicoctl
