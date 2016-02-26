@@ -7,7 +7,8 @@ ssl-keys: admin.pem apiserver.pem
 cluster:
 	make clean-webserver        # Stop any existing webserver.
 	make clean-keys             # Remove any SSL keys.
-	make clean-kubectl	    # Remove old kubectl
+	make clean-kubectl	    # Remove old kubectl.
+	make clean-binaries         # Clean CNI binaries.
 	make kubectl                # Get kubectl
 	make binaries               # Make calico-cni binaries.
 	make create-cluster-vagrant # Start the cluster.
