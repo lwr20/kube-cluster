@@ -23,7 +23,7 @@ spec:
         projectcalico.org/app: "policy-agent"
     spec:
       containers:
-        - name: policyagent
+        - name: policyagent    
           image: caseydavenport/k8s-policy-agent
           imagePullPolicy: Always
           env:
@@ -31,3 +31,5 @@ spec:
             value: "172.18.18.101:2379"
           - name: K8S_API
             value: "https://kubernetes.default:443"
+          - name: LOG_LEVEL
+            value: "debug"
