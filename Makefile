@@ -1,4 +1,7 @@
 K8S_VERSION=1.1.3
+
+# Which OS version to use for kubectl
+# `darwin` or `linux`
 OS=darwin
 
 all: apply-node-labels deploy-pinger
