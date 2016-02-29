@@ -38,16 +38,19 @@ Vagrant.configure("2") do |config|
 	  v.memory = 1024
 	  v.cpus = 2
 	end
-	host.vm.provision :docker, images: ["busybox:latest", "gcr.io/google_containers/pause:0.8.0"]
+        host.vm.provision :docker, images: ["caseydavenport/node:latest", "gcr.io/google_containers/pause:0.8.0"]
         host.vm.provision :file, :source => "master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
+        host.vm.provision :file, :source => "policy", :destination => "/home/core/policy"
+        host.vm.provision :file, :source => "demo/frontend-policy.yaml", :destination => "/home/core/frontend-policy.yaml"
+        host.vm.provision :file, :source => "demo/backend-policy.yaml", :destination => "/home/core/backend-policy.yaml"
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
-	host.vm.network "forwarded_port", guest: 2379, host: 2379
+        host.vm.network "forwarded_port", guest: 2379, host: 2379
       else
 	config.vm.provider :virtualbox do |v|
 	  v.memory = 2048 
 	  v.cpus = 1
 	end
-	host.vm.provision :docker, images: ["busybox:latest", "gcr.io/google_containers/pause:0.8.0"]
+        host.vm.provision :docker, images: ["caseydavenport/node:latest", "gcr.io/google_containers/pause:0.8.0"]
         host.vm.provision :file, :source => "node-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
       end
