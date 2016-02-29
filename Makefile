@@ -12,10 +12,12 @@ cluster:
 	make kubectl                # Get kubectl
 	make binaries               # Make calico-cni binaries.
 	make create-cluster-vagrant # Start the cluster.
-	make kube-system            # Create kube-system namespace.
-	make run-dns-pod            # Run DNS addon.
-	make run-kube-ui            # Run kube-ui addon.
-	make install-net-policy     # Allow NetworkPolicy API objects.
+	make install-addons
+
+# Installs Kubernetes addons
+install-addons:
+	-./kubectl create -f addons/kube-system.yaml
+	-./kubectl create -f addons/
 
 # Builds the latest calico-cni binaries.
 binaries: 
@@ -61,16 +63,6 @@ run-dns-pod:
 remove-kube-ui:
 	./kubectl --namespace=kube-system delete rc kube-ui-v4
 	./kubectl --namespace=kube-system delete svc kube-ui
-
-run-kube-ui: 
-	./kubectl create -f kube-ui/
-
-kube-system:
-	./kubectl create -f namespaces/kube-system.yaml
-
-install-net-policy:
-	./kubectl create --validate=false -f 3rdparty/NetworkPolicy.yaml 
-	./kubectl create -f calico/calico-policy-services.yaml
 
 calicoctl:
 	wget http://www.projectcalico.org/builds/calicoctl
