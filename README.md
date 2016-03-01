@@ -31,11 +31,14 @@ and configures policy on each.  Demo files are located [here](./demo/).
 Once all the pods are started, they should have full connectivity. 
 
 ```
-# Get the backend
-./kubectl exec -ti pod frontend-xxxx wget backend
+# Get the backend from the frontend.
+./kubectl exec -ti frontend-xxxxx -- curl backend 
 
-# Get the frontend
-./kubectl exec -ti pod backend-xxxx wget frontend 
+# Get the frontend using a NodePort.
+curl http://172.18.18.101:30001
+
+# Get the frontend from the backend. 
+./kubectl exec -ti backend-xxxxx -- curl frontend
 ```
 
 2) Enable isolation
