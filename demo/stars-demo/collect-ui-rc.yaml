@@ -12,5 +12,6 @@ spec:
       containers:
       - name: nginx 
         image: caseydavenport/collect
+        imagePullPolicy: Always
         ports:
-        - containerPort: 9000 
+        - containerPort: 9001
