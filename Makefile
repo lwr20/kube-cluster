@@ -1,4 +1,4 @@
-K8S_VERSION=1.1.3
+K8S_VERSION=1.1.8
 
 # Which OS version to use for kubectl
 # `darwin` or `linux`
@@ -83,29 +83,6 @@ remove-heapster:
 vagrant-ssh:
 	vagrant ssh-config > vagrant-ssh
 
-heapster-images: vagrant-ssh
-	docker pull kubernetes/heapster_grafana:v2.5.0
-	docker pull kubernetes/heapster_influxdb:v0.6
-	docker pull kubernetes/heapster:v0.19.0
-	docker save kubernetes/heapster_grafana:v2.5.0 | ssh -F vagrant-ssh calico-01 docker load
-	docker save kubernetes/heapster_influxdb:v0.6 | ssh -F vagrant-ssh calico-01 docker load
-	docker save kubernetes/heapster:canary | ssh -F vagrant-ssh calico-01 docker load
-
-apply-node-labels:
-	kubectl label nodes -l 'kubernetes.io/hostname!=172.18.18.101' role=node	
-
-deploy-pinger: remove-pinger
-	kubectl create -f pinger
-
-remove-pinger:
-	-kubectl delete rc pinger --grace-period=1
-
-scale-pinger:
-	kubectl scale --replicas=20 rc/pinger
-
-launch-firefox:
-	firefox 'http://172.18.18.101:8080/api/v1/proxy/namespaces/default/services/monitoring-grafana/'
-
 ca-key.pem:
 	openssl genrsa -out ca-key.pem 2048
 	openssl req -x509 -new -nodes -key ca-key.pem -days 10000 -out ca.pem -subj "/CN=kube-ca"
@@ -124,19 +101,3 @@ clean-keys:
 	rm -f *.pem
 	rm -f ca.srl
 	rm -f *.csr
-
-CLUSTER_SIZE := 25
-NODE_NUMBERS := $(shell seq -f '%02.0f' 2 ${CLUSTER_SIZE})
-LOG_RETRIEVAL_TARGETS := $(addprefix job,${NODE_NUMBERS})
-
-pull-plugin-timings: ${LOG_RETRIEVAL_TARGETS}
-	# See http://stackoverflow.com/a/12110773/61318
-	#make -j12 CLUSTER_SIZE=2 pull-plugin-timings
-	echo "DONE"
-	cat timings/*.log > timings/all.timings
-
-${LOG_RETRIEVAL_TARGETS}: job%:
-	mkdir -p timings
-	ssh -F vagrant-ssh calico-$* grep TIMING  /var/log/calico/kubernetes/calico.log | grep -v status > timings/calico-$*.log
-
-.PHONEY: ${LOG_RETRIEVAL_TARGETS}
