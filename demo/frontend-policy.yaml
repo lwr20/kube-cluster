@@ -1,12 +1,19 @@
-kind: NetworkPolicy 
-apiVersion: net.alpha.kubernetes.io/v1alpha1 
-metadata: 
-  namespace: default 
+kind: NetworkPolicy
+apiVersion: net.alpha.kubernetes.io/v1alpha1
+metadata:
+  namespace: default
   name: frontend-policy
-spec: 
+spec:
   podSelector:
-    tier: frontend
-  ingress: 
-    - ports:
-       - protocol: TCP 
-         port: 80
+    role: collect-ui
+  ingress:
+    - from:
+        - pods:
+            tier: frontend
+        - namespaces:
+            role: collect-ui
+        - namespaces:
+            role: client
+      ports:
+        - protocol: TCP
+          port: 80
