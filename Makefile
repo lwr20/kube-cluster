@@ -13,7 +13,6 @@ cluster:
 	make clean-keys             # Remove any SSL keys.
 	make clean-kubectl	    # Remove old kubectl
 	make kubectl                # Get kubectl
-	make binaries               # Make calico-cni binaries.
 	make create-cluster-vagrant # Start the cluster.
 	make install-addons
 
