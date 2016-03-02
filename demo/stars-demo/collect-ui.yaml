@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: collect-ui
+  labels:
+    role: collect-ui
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collect-ui 
+  namespace: collect-ui
+spec:
+  type: NodePort
+  ports:
+  - port: 9001 
+    targetPort: 9001
+    nodePort: 30002
+  selector:
+    role: collect-ui 
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: collect-ui 
+  namespace: collect-ui
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: collect-ui 
+    spec:
+      containers:
+      - name: nginx 
+        image: caseydavenport/collect
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9001
