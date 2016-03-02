@@ -12,5 +12,6 @@ spec:
       containers:
       - name: nginx 
         image: caseydavenport/probe 
+        imagePullPolicy: Always
         ports:
         - containerPort: 80 
