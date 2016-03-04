@@ -195,3 +195,19 @@ coreos:
         ExecStart=/opt/bin/get-certs.sh
         RemainAfterExit=yes
         Type=oneshot
+
+    - name: master-star-probe.service
+      runtime: true
+      command: start
+      content: |
+        [Unit]
+        Description="Run star-probe on the master"
+        After=network-online.service
+
+        [Service]
+        ExecStartPre=/usr/bin/wget -N -P /opt/bin http://172.18.18.1:8000/star-probe 
+        ExecStartPre=/usr/bin/chmod +x /opt/bin/star-probe 
+        ExecStart=/opt/bin/star-probe \
+        --urls=http://frontend.default.cluster.local:80/status,http://backend.default.cluster.local:6379/status,http://172.18.18.101:9000/status
+        Restart=always
+        RestartSec=10
