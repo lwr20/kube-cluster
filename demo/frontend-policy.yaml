@@ -5,13 +5,9 @@ metadata:
   name: frontend-policy
 spec:
   podSelector:
-    role: collect-ui
+    tier: frontend 
   ingress:
     - from:
-        - pods:
-            tier: frontend
-        - namespaces:
-            role: collect-ui
         - namespaces:
             role: client
       ports:

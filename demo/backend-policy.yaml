@@ -10,8 +10,6 @@ spec:
     - from:
         - pods:
             tier: frontend
-        - namespaces:
-            role: collect-ui
       ports:
         - protocol: TCP
           port: 6379
