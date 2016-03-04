@@ -43,6 +43,7 @@ Vagrant.configure("2") do |config|
         host.vm.provision :file, :source => "policy", :destination => "/home/core/policy"
         host.vm.provision :file, :source => "demo/frontend-policy.yaml", :destination => "/home/core/frontend-policy.yaml"
         host.vm.provision :file, :source => "demo/backend-policy.yaml", :destination => "/home/core/backend-policy.yaml"
+        host.vm.provision :file, :source => "demo/allow-ui.yaml", :destination => "/home/core/allow-ui.yaml"
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
         host.vm.network "forwarded_port", guest: 2379, host: 2379
       else
