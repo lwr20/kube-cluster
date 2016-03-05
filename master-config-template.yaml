@@ -126,7 +126,7 @@ coreos:
         ExecStartPre=/usr/bin/wget -N -P /opt/bin https://github.com/projectcalico/calico-containers/releases/download/v0.16.1/calicoctl 
         ExecStartPre=/usr/bin/chmod +x /opt/bin/calicoctl
         ExecStartPre=/opt/bin/calicoctl pool add 192.168.0.0/16 --nat-outgoing
-        ExecStart=/opt/bin/calicoctl node --detach=false --node-image=caseydavenport/node
+        ExecStart=/opt/bin/calicoctl node --detach=false --node-image=calico/node:kubecon2016
         Restart=always
         RestartSec=10
 
