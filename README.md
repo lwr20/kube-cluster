@@ -44,8 +44,11 @@ kubectl annotate ns default "net.alpha.kubernetes.io/network-isolation=yes" --ov
 kubectl annotate ns client "net.alpha.kubernetes.io/network-isolation=yes" --overwrite=true
 ```
 
-The UI will no longer be able to access the pods, so they will no longer show up in the UI.  Allow 
-the UI to access the pods via a NetworkPolicy.
+Refresh the management UI (it may take up to 10 seconds for changes to be reflected in the UI).
+
+The UI can no longer be able to access the pods, and so they will no longer show up in the UI.  
+
+Allow the UI to access the pods via a NetworkPolicy.
 ```
 # Allow access from the management UI. 
 policy create -f allow-ui.yaml
@@ -53,7 +56,7 @@ policy create -f allow-ui-client.yaml
 policy list
 ```
 
-The UI should now show the pods, but the services should not be able to access each other any more.
+After a few seconds, refresh the UI - it should now show the services, but they should not be able to access each other any more.
 
 4) Create the "backend-policy.yaml" file to allow traffic from the frontend to the backend.
 ```
@@ -61,8 +64,9 @@ policy create -f backend-policy.yaml
 policy list
 ```
 
-The frontend can now curl the backend, but cannot ping it (since only TCP 80 is allowed)
+The frontend can now access the backend on TCP port 80 only.
 The backend cannot access the frontend at all.
+The client cannot access the frontend, nor the backend.
 
 5) On the master, expose the frontend service to the `client` namespace.
 ```
