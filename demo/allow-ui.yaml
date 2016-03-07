@@ -8,4 +8,4 @@ spec:
   ingress:
     - from:
         - namespaces:
-            role: collect-ui
+            role: management-ui 

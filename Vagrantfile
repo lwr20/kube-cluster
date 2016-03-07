@@ -2,7 +2,7 @@
 num_instances=4
 
 # Change basename of the VM
-instance_name_prefix="calico"
+instance_name_prefix="k8s"
 
 # Official CoreOS channel from which updates should be downloaded
 update_channel='stable'
@@ -25,9 +25,15 @@ Vagrant.configure("2") do |config|
 
   # Set up each box
   (1..num_instances).each do |i|
-    vm_name = "%s-%02d" % [instance_name_prefix, i]
+    # Determine the VM's name.
+    if i == 1
+      vm_name = "%s-%s" % [instance_name_prefix, "master"]
+    else
+      vm_name = "%s-node-%02d" % [instance_name_prefix, i-1]
+    end
+
     config.vm.define vm_name do |host|
-      host.vm.hostname = vm_name
+      host.vm.hostname = vm_name 
 
       ip = "172.18.18.#{i+100}"
       host.vm.network :private_network, ip: ip
@@ -38,13 +44,18 @@ Vagrant.configure("2") do |config|
 	  v.memory = 1024
 	  v.cpus = 2
 	end
-        host.vm.provision :docker, images: ["caseydavenport/node:latest", "gcr.io/google_containers/pause:0.8.0"]
-        host.vm.provision :file, :source => "master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
+	# Pre-fetch docker images.
+        host.vm.provision :docker, images: ["calico/node:kubecon2016"]
+
+        # Install policy yaml files.
         host.vm.provision :file, :source => "policy", :destination => "/home/core/policy"
         host.vm.provision :file, :source => "demo/frontend-policy.yaml", :destination => "/home/core/frontend-policy.yaml"
         host.vm.provision :file, :source => "demo/backend-policy.yaml", :destination => "/home/core/backend-policy.yaml"
         host.vm.provision :file, :source => "demo/allow-ui.yaml", :destination => "/home/core/allow-ui.yaml"
         host.vm.provision :file, :source => "demo/allow-ui-client.yaml", :destination => "/home/core/allow-ui-client.yaml"
+
+        # Install cloud-config.
+        host.vm.provision :file, :source => "master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
         host.vm.network "forwarded_port", guest: 2379, host: 2379
       else
@@ -52,7 +63,13 @@ Vagrant.configure("2") do |config|
 	  v.memory = 2048 
 	  v.cpus = 1
 	end
-        host.vm.provision :docker, images: ["caseydavenport/node:latest", "gcr.io/google_containers/pause:0.8.0"]
+        # Pre-fetch Docker images.
+        host.vm.provision :docker, images: ["calico/node:kubecon2016", "gcr.io/google_containers/pause:latest"]
+        host.vm.provision :docker, images: ["caseydavenport/collect:latest"]
+        host.vm.provision :docker, images: ["caseydavenport/frontend:latest"]
+        host.vm.provision :docker, images: ["caseydavenport/backend:latest"]
+
+	# Install cloud-config.
         host.vm.provision :file, :source => "node-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
       end
