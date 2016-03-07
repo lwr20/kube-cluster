@@ -48,11 +48,12 @@ Vagrant.configure("2") do |config|
         host.vm.provision :docker, images: ["calico/node:kubecon2016"]
 
         # Install policy yaml files.
-        host.vm.provision :file, :source => "policy", :destination => "/home/core/policy"
+        host.vm.provision :file, :source => "demo/policy", :destination => "/home/core/policy"
         host.vm.provision :file, :source => "demo/frontend-policy.yaml", :destination => "/home/core/frontend-policy.yaml"
         host.vm.provision :file, :source => "demo/backend-policy.yaml", :destination => "/home/core/backend-policy.yaml"
         host.vm.provision :file, :source => "demo/allow-ui.yaml", :destination => "/home/core/allow-ui.yaml"
         host.vm.provision :file, :source => "demo/allow-ui-client.yaml", :destination => "/home/core/allow-ui-client.yaml"
+        host.vm.provision :file, :source => "demo/stars-demo", :destination => "/home/core/stars-demo-files"
 
         # Install cloud-config.
         host.vm.provision :file, :source => "master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
