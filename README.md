@@ -11,6 +11,8 @@ This will spin up 1 Kubernetes master and 3 minions.  Creating the cluster downl
 kubectl get pods --all-namespaces 
 ```  
 
+> Note: Starting the cluster may take 5-10 minutes, as it downloads all the Docker images necessary for the demo.
+
 You should see the following output (or similar):
 ```
 illium:kube-cluster cd4$ ./kubectl get pods --all-namespaces
@@ -20,53 +22,53 @@ kube-system     kube-dns-v9-dtay6           4/4       Running   0          1m
 kube-system     kube-ui-v4-cs8ya            1/1       Running   0          1m
 ```
 
-# Running the demo.
-The included demo sets up a frontend and backend service (each just running nginx)
+# Running the stars demo
+The included demo sets up a frontend and backend service
 and configures policy on each.  Demo files are located [here](./demo/).
 
-1) Create the frontend and backend ReplicationControllers and Services.
+1) Log into the master.  The following commands are all run on the Master.
 ```
-./kubectl create -f demo/manifests
-```
-Once all the pods are started, they should have full connectivity. 
-
-```
-# Get the backend from the frontend.
-./kubectl exec -ti frontend-xxxxx -- curl backend 
-
-# Get the frontend using a NodePort.
-curl http://172.18.18.101:30001
-
-# Get the frontend from the backend. 
-./kubectl exec -ti backend-xxxxx -- curl frontend
+vagrant ssh k8s-master
 ```
 
-2) Enable isolation
+2) Create the frontend and backend ReplicationControllers and Services.
 ```
-./kubectl annotate ns default "net.alpha.kubernetes.io/network-isolation=yes" --overwrite=true
+kubectl create -f stars-demo-files/ 
+```
+Once all the pods are started, they should have full connectivity. You can see this 
+via the UI by visiting `http://172.18.18.101:30002` in a browser. 
+
+3) Enable isolation
+```
+kubectl annotate ns default "net.alpha.kubernetes.io/network-isolation=yes" --overwrite=true
+kubectl annotate ns client "net.alpha.kubernetes.io/network-isolation=yes" --overwrite=true
 ```
 
-The services should not be able to access each other any more.
+The UI will no longer be able to access the pods, so they will no longer show up in the UI.  Allow 
+the UI to access the pods via a NetworkPolicy.
+```
+# Allow access from the management UI. 
+policy create -f allow-ui.yaml
+policy create -f allow-ui-client.yaml
+policy list
+```
 
-3) On the master, create the "backend-policy.yaml" file to allow traffic from the frontend to the backend.
+The UI should now show the pods, but the services should not be able to access each other any more.
+
+4) Create the "backend-policy.yaml" file to allow traffic from the frontend to the backend.
 ```
-cat backend-policy.yaml | ./policy create
-./policy list
+policy create -f backend-policy.yaml
+policy list
 ```
-> View the existing policies with `./policy get <namespace> <policy_name>`
 
 The frontend can now curl the backend, but cannot ping it (since only TCP 80 is allowed)
 The backend cannot access the frontend at all.
 
-4) On the master, expose the frontend service to the "internet"
+5) On the master, expose the frontend service to the `client` namespace.
 ```
-cat frontend-policy.yaml | ./policy create
-./policy list
+policy create -f frontend-policy.yaml
+policy list
 ```
 
-The frontend should be accessible from anywhere (but only on TCP 80).
-
-To access it via NodePort:
-```
-curl http://172.18.18.101:30001 
-```
+The client can now access the frontend, but not the backend.  Neither the frontend nor the backend 
+can initiate connections to the client.

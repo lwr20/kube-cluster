@@ -49,6 +49,7 @@ Vagrant.configure("2") do |config|
 
         # Install policy yaml files.
         host.vm.provision :file, :source => "demo/policy", :destination => "/home/core/policy"
+        host.vm.provision :shell, :inline => "mv /home/core/policy /opt/bin/policy", :privileged => true
         host.vm.provision :file, :source => "demo/frontend-policy.yaml", :destination => "/home/core/frontend-policy.yaml"
         host.vm.provision :file, :source => "demo/backend-policy.yaml", :destination => "/home/core/backend-policy.yaml"
         host.vm.provision :file, :source => "demo/allow-ui.yaml", :destination => "/home/core/allow-ui.yaml"
