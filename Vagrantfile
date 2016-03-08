@@ -56,6 +56,7 @@ Vagrant.configure("2") do |config|
         host.vm.provision :file, :source => "demo/allow-ui.yaml", :destination => "/home/core/allow-ui.yaml"
         host.vm.provision :file, :source => "demo/allow-ui-client.yaml", :destination => "/home/core/allow-ui-client.yaml"
         host.vm.provision :file, :source => "demo/stars-demo", :destination => "/home/core/stars-demo-files"
+        host.vm.provision :file, :source => "demo/reset-demo.sh", :destination => "/home/core/reset-demo.sh"
 
         # Install cloud-config.
         host.vm.provision :file, :source => "master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
