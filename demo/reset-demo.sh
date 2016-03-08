@@ -14,3 +14,7 @@ policy delete allow-ui
 policy delete allow-ui --namespace=client
 policy delete frontend-policy
 policy delete backend-policy
+
+# Delete namespaces.
+kubectl delete ns client
+kubectl delete ns management-ui
