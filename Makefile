@@ -19,8 +19,8 @@ cluster:
 
 # Installs Kubernetes addons
 install-addons:
-	-./kubectl create -f kube-system.yaml
-	-./kubectl create -f addons/
+	./kubectl create -f kube-system.yaml
+	./kubectl create -f addons/
 
 # Builds calico-cni binaries from submodule.
 binaries: 
