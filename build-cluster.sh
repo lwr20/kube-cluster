@@ -1,10 +1,12 @@
 #!/bin/bash 
 
+set -e
+
 # Clean
 make clean-webserver
 make clean-keys
 make clean-binaries
-docker rmi -f calico/build
+docker rmi -f calico/build || echo "calico/build not present"
 
 # Get right kube-cluster branch
 git fetch
@@ -18,9 +20,11 @@ git submodule update
 # Checkout correct calico-cni branch.
 cd calico-cni
 git fetch
-git checkout $CALICO_CNI_BRANCH
-git pull origin $CALICO_CNI_BRANCH
+git checkout -f $CALICO_CNI_BRANCH
+git pull -f origin $CALICO_CNI_BRANCH
 cd ..
 
 # Build the cluster.
 make cluster
+
+set +e
