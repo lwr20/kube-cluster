@@ -2,7 +2,7 @@ K8S_VERSION=1.1.8
 
 # Which OS version to use for kubectl
 # `darwin` or `linux`
-OS=darwin
+OS=linux
 
 ssl-keys: admin.pem apiserver.pem 
 

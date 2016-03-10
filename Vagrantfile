@@ -41,8 +41,8 @@ Vagrant.configure("2") do |config|
       # Use a different cloud-init on the first server.
       if i == 1
 	config.vm.provider :virtualbox do |v|
-	  v.memory = 1024
-	  v.cpus = 2
+	  v.memory = 4096 
+	  v.cpus = 4
 	end
 
 	# Pre-fetch docker images.
@@ -53,8 +53,8 @@ Vagrant.configure("2") do |config|
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
       else
 	config.vm.provider :virtualbox do |v|
-	  v.memory = 2048 
-	  v.cpus = 1
+	  v.memory = 4096 
+	  v.cpus = 2
 	end
 
         # Pre-fetch Docker images.
