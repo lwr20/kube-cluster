@@ -11,9 +11,10 @@ cluster:
 	make clean-webserver        # Stop any existing webserver.
 	make clean-keys             # Remove any SSL keys.
 	make clean-kubectl	    # Remove old kubectl.
-	make clean-binaries         # Clean CNI binaries.
+	make clean-calico           
 	make kubectl                # Get kubectl
-	make binaries               # Build the CNI binaries.
+	make calico 
+	make push-registry-images   # Push docker images to local registry.
 	make create-cluster-vagrant # Start the cluster.
 	make install-addons
 
@@ -22,13 +23,15 @@ install-addons:
 	./kubectl create -f kube-system.yaml
 	./kubectl create -f addons/
 
-# Builds calico-cni binaries from submodule.
-binaries: 
+# Builds Calico components to use. 
+calico: 
 	make -C calico-cni binary
+	make -C k8s-policy docker-image
 
 # Cleans the calico-cni submodule.
-clean-binaries:
+clean-calico:
 	make -C calico-cni clean
+	make -C k8s-policy clean
 
 destroy-cluster-vagrant: 
 	-vagrant destroy -f
@@ -38,6 +41,16 @@ create-cluster-vagrant: destroy-cluster-vagrant webserver
 
 webserver: ssl-keys
 	python -m SimpleHTTPServer &
+
+docker-registry:
+	docker run -d -p 5000:5000 --restart=always --name k8s-cluster-registry registry:2
+
+push-registry-images: calico
+	docker tag calico/k8s-policy-agent http://172.18.18.1:5000/calico/k8s-policy-agent
+	docker push http://172.18.18.1:5000/calico/k8s-policy-agent
+
+clean-registry:
+	docker stop k8s-cluster-registry && docker rm -v k8s-cluster-registry
 
 clean-webserver: clean-keys
 	(sudo killall python) || echo "Server not running"
