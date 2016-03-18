@@ -1,6 +1,9 @@
 K8S_VERSION=1.2.0
 
-all: apply-node-labels deploy-pinger
+# Which OS version to use for kubectl
+# `darwin` or `linux`
+OS=linux
+
 ssl-keys: admin.pem apiserver.pem 
 
 # Creates a Kubernetes cluster which passes the k8s conformance tests.
@@ -10,15 +13,18 @@ cluster:
 	make clean-kubectl	    # Remove old kubectl.
 	make clean-binaries         # Clean CNI binaries.
 	make kubectl                # Get kubectl
-	make binaries               # Make calico-cni binaries.
+	make binaries               # Build the CNI binaries.
 	make create-cluster-vagrant # Start the cluster.
-	make kube-system            # Create kube-system namespace.
-	make run-dns-pod            # Run DNS addon.
-	make run-kube-ui            # Run kube-ui addon.
+	make install-addons
 
-# Builds the latest calico-cni binaries.
+# Installs Kubernetes addons
+install-addons:
+	./kubectl create -f kube-system.yaml
+	./kubectl create -f addons/
+
+# Builds calico-cni binaries from submodule.
 binaries: 
-	make -C calico-cni
+	make -C calico-cni binary
 
 # Cleans the calico-cni submodule.
 clean-binaries:
@@ -43,29 +49,12 @@ clean-kubectl:
 	rm -f kubectl
 
 kubectl: admin.pem
-	wget http://storage.googleapis.com/kubernetes-release/release/v$(K8S_VERSION)/bin/linux/amd64/kubectl
+	wget http://storage.googleapis.com/kubernetes-release/release/v$(K8S_VERSION)/bin/$(OS)/amd64/kubectl
 	chmod +x kubectl
 	./kubectl config set-cluster default-cluster --server=https://172.18.18.101 --certificate-authority=ca.pem
 	./kubectl config set-credentials default-admin --certificate-authority=ca.pem --client-key=admin-key.pem --client-certificate=admin.pem
 	./kubectl config set-context default-system --cluster=default-cluster --user=default-admin
 	./kubectl config use-context default-system
-
-remove-dns: 
-	./kubectl --namespace=kube-system delete rc kube-dns-v9
-	./kubectl --namespace=kube-system delete svc kube-dns
-
-run-dns-pod:
-	./kubectl create --validate=false -f dns/dns-addon.yaml
-
-remove-kube-ui:
-	./kubectl --namespace=kube-system delete rc kube-ui-v4
-	./kubectl --namespace=kube-system delete svc kube-ui
-
-run-kube-ui: 
-	./kubectl create --validate=false -f kube-ui/
-
-kube-system:
-	./kubectl create --validate=false -f namespaces/kube-system.yaml
 
 calicoctl:
 	wget http://www.projectcalico.org/builds/calicoctl
