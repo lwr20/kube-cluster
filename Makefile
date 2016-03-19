@@ -2,7 +2,7 @@ K8S_VERSION=1.2.0
 
 # Which OS version to use for kubectl
 # `darwin` or `linux`
-OS=linux
+OS=darwin
 
 ssl-keys: admin.pem apiserver.pem 
 
@@ -15,7 +15,12 @@ cluster:
 	make kubectl                # Get kubectl
 	make binaries               # Build the CNI binaries.
 	make create-cluster-vagrant # Start the cluster.
+	make wait-for-cluster
 	make install-addons
+
+# Waits for 3 nodes to have started.
+wait-for-cluster:
+	python wait_for_cluster.py
 
 # Installs Kubernetes addons
 install-addons:
