@@ -46,10 +46,10 @@ Vagrant.configure("2") do |config|
 	end
 
 	# Pre-fetch docker images.
-        host.vm.provision :docker, images: ["calico/node:v0.17.0-k8s-policy"]
+        host.vm.provision :docker, images: ["calico/node:v0.18.0"]
 
         # Install cloud-config.
-        host.vm.provision :file, :source => "master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
+        host.vm.provision :file, :source => "cloud-config/master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
       else
 	config.vm.provider :virtualbox do |v|
@@ -58,10 +58,10 @@ Vagrant.configure("2") do |config|
 	end
 
         # Pre-fetch Docker images.
-        host.vm.provision :docker, images: ["calico/node:v0.17.0-k8s-policy", "gcr.io/google_containers/pause:latest"]
+        host.vm.provision :docker, images: ["calico/node:v0.18.0", "gcr.io/google_containers/pause:latest"]
 
 	# Install cloud-config.
-        host.vm.provision :file, :source => "node-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
+        host.vm.provision :file, :source => "cloud-config/node-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
       end
     end
