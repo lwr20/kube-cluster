@@ -48,6 +48,9 @@ Vagrant.configure("2") do |config|
 	# Pre-fetch docker images.
         host.vm.provision :docker, images: ["calico/node:v0.18.0"]
 
+	# Install the demos folder.
+        host.vm.provision :file, :source => "demos", :destination => "/home/core/demos"
+
         # Install cloud-config.
         host.vm.provision :file, :source => "cloud-config/master-config-template.yaml", :destination => "/tmp/vagrantfile-user-data"
         host.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
