@@ -9,7 +9,7 @@ echo "Starting nginx Service"
 kubectl create -f nginx-server.yaml
 
 echo "Applying policy to nginx Service"
-policy create -f nginx-policy.yaml
+./policy create -f nginx-policy.yaml
 
 echo "Start getter ReplicationController"
 kubectl create -f getter.yaml
