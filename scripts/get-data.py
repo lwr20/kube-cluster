@@ -7,11 +7,49 @@ import re
 from dateutil import parser
 from subprocess import check_output
 
-# Time extract regex.
+# Various regexes.
+queue_time_re = re.compile("INFO \('default', '(.*)'\) time on the queue: ([0-9\.]+)")
+proc_time_re = re.compile("INFO \('default', '(.*)'\) total process time: ([0-9]+\.[0-9]+)")
 start_re = re.compile("Started: ([0-9]+\.[0-9]+)")
 end_re = re.compile("Completed: ([0-9]+\.[0-9]+)")
+time_re = re.compile("\d\d:\d\d:\d\d")
+qlen_re = re.compile("Adding Pod: (.*) to queue \((.*)\) \((.*)\)")
 
-# Stores mapping of start time to elapsed time.
+# Stores the collected data for plotting, etc.
+data_by_pod = {}
+
+# Get all pod names in calico-system.
+all_pods = check_output(["kubectl", "get", 
+                         "pods", "--namespace=calico-system", 
+                         "-o", "json"])
+all_pods = json.loads(all_pods)["items"]
+pod = all_pods[0]
+
+# Get calico-k8s-policy-agent pod metadata.
+pod_name = str(all_pods[0]["metadata"]["name"])
+
+# Extract logs.
+calico_logs = check_output(["kubectl", "logs", "--namespace=calico-system", pod_name])
+
+# Extract queue / total processing times from the logs.
+queue_times = queue_time_re.findall(calico_logs)
+process_times = proc_time_re.findall(calico_logs)
+
+# Store the time spent in queue per-pod.
+for pod, time in queue_times:
+    data_by_pod.setdefault(pod, {})["queue_time"] = float(time)
+
+# Store the total process time per-pod.
+for pod, time in process_times:
+    data_by_pod.setdefault(pod, {})["process_time"] = float(time)
+
+# Get queue lengths and CPU, MEM usage.
+qlengths = qlen_re.findall(calico_logs)
+for _pod, length, t in qlengths:
+    data_by_pod.setdefault("qlengths", []).append(length)
+    data_by_pod.setdefault("time", []).append(float(t))
+
+# Stores mapping of start time to elapsed time list.
 elapsed_by_start_time = {}
 
 # Get all pod names.
@@ -19,27 +57,43 @@ all_pods = check_output(["kubectl", "get", "pods", "-o", "json"])
 all_pods = json.loads(all_pods)["items"]
 
 # Get all "getter" pod names.
-pod_names = [p["metadata"]["name"] for p in all_pods
-                if "getter" in p["metadata"]["name"]]
+pods = {str(p["metadata"]["name"]): p for p in all_pods
+                if "getter" in p["metadata"]["name"]}
 
 # Those that we fail to parse.
 failed = []
 
-# Arrays for scatter.
+# Arrays for scatter plots.
 start_times = []
 elapsed_times = []
 end_times = []
+agent_process_times = []
 
 # For each pod, get its logs.
-for p in pod_names:
-    logs = check_output(["kubectl", "logs", p])
+for pod_name, pod in pods.iteritems():
+    # Get node name for this pod.
+    node_name = pod["spec"].get("nodeName", None)
+    pod_id = "%s: %s" % (node_name, pod_name)
+
+    try:
+        logs = check_output(["kubectl", "logs", pod_name])
+    except subprocess.CalledProcessError, e:
+        print "Error getting logs for: %s" % pod_id
+        failed.append((pod, "", e))
+        continue
+
     try:
         start_time = float(start_re.findall(logs)[0])
+    except IndexError:
+        print "pod has not started yet: %s" % pod_id
+        failed.append((pod, logs, None))
+        continue
+
+    try:
         end_time = float(end_re.findall(logs)[0])
     except IndexError:
-        print "WARN: Missing start / end time"
-        print logs
-        failed.append((p, logs))
+        print "No end time for pod: %s" % pod_id
+        failed.append((pod, logs, None))
         continue
 
     # Determine the elapsed time and store in the mapping dict.
@@ -51,17 +105,29 @@ for p in pod_names:
     start_times.append(start_time)
     elapsed_times.append(elapsed)
     end_times.append(end_time)
+    agent_process_times.append(data_by_pod[pod_name]["process_time"])
 
-# Sort all of the start times into an array.
+    qtime = data_by_pod[pod_name]["queue_time"]
+    ptime = data_by_pod[pod_name]["process_time"]
+    ratio = qtime / ptime
+
+    # Store data.
+    data_by_pod[pod_name].update({
+            "times": time_re.findall(logs),
+            "start_time": start_time,
+            "end_time": end_time,
+            "logs": logs,
+            "node": node_name,
+            "raw": pod
+    })
+
+# Sort all of the start/end times into an array.
 ordered_start_times = sorted(start_times) 
 ordered_end_times = sorted(end_times) 
 
-for s in ordered_start_times:
-    print s, elapsed_by_start_time[s]
-
 print "%s failed to get logs" % len(failed)
 
-# Create histogram.
+# Create histogram of elapsed time-to-connect.
 vals = []
 for _, l in elapsed_by_start_time.iteritems():
     vals += l
@@ -72,8 +138,40 @@ pylab.show()
 # Calculate start times, shifted to account
 # for the first pod to start.
 min_x = ordered_start_times[0]
+max_x = ordered_start_times[-1]
+min_y = ordered_end_times[0]
+max_y = ordered_end_times[-1]
 x = [(t-min_x) for t in start_times]
 
 # Plot data.
 pylab.plot(x, elapsed_times, 'ro')
+pylab.xlabel('time')
+pylab.ylabel('time to connect')
 pylab.show()
+
+# Plot agent process time versus pod started time.
+pylab.plot(x, agent_process_times, "ro") 
+pylab.xlabel('time')
+pylab.ylabel('agent proc time')
+pylab.show()
+
+# Plot queue length over time, compared with total 
+# API events and agent CPU usage.
+qlens = data_by_pod["qlengths"]
+qlen_x = data_by_pod["time"]
+qlen_x = [i - min(qlen_x) for i in qlen_x]
+
+# Calculate number of received events.
+event_count = range(len(qlen_x))
+
+pylab.plot(qlen_x, event_count, "ro",
+           qlen_x, qlens, "bs")
+
+pylab.xlabel('x')
+pylab.ylabel('queue length')
+pylab.show()
+
+# Print out some data.
+print "Time to start %s pods: %s" % (len(x), max_x - min_x)
+print "First-pod to full connectivity: %s" % (max_y - min_x)
+print "Last-pod to full connectivity: %s" % (max_y - max_x)
