@@ -14,7 +14,7 @@ kind: ReplicationController
 metadata:
   name: nginx-server 
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     k8s-app: nginx-server 
   template:
