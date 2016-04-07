@@ -13,7 +13,7 @@ proc_time_re = re.compile("INFO \('default', '(.*)'\) total process time: ([0-9]
 start_re = re.compile("Started: ([0-9]+\.[0-9]+)")
 end_re = re.compile("Completed: ([0-9]+\.[0-9]+)")
 time_re = re.compile("\d\d:\d\d:\d\d")
-qlen_re = re.compile("Adding Pod: (.*) to queue \((.*)\) \((.*)\)")
+qlen_re = re.compile("Pod: (.*) to queue \((.*)\) \((.*)\)")
 
 # Stores the collected data for plotting, etc.
 data_by_pod = {}
@@ -105,14 +105,12 @@ for pod_name, pod in pods.iteritems():
     start_times.append(start_time)
     elapsed_times.append(elapsed)
     end_times.append(end_time)
-    agent_process_times.append(data_by_pod[pod_name]["process_time"])
 
-    qtime = data_by_pod[pod_name]["queue_time"]
-    ptime = data_by_pod[pod_name]["process_time"]
-    ratio = qtime / ptime
+    if pod_name in data_by_pod:
+        agent_process_times.append(data_by_pod[pod_name]["process_time"])
 
     # Store data.
-    data_by_pod[pod_name].update({
+    data_by_pod.setdefault(pod_name, {}).update({
             "times": time_re.findall(logs),
             "start_time": start_time,
             "end_time": end_time,
@@ -132,7 +130,8 @@ vals = []
 for _, l in elapsed_by_start_time.iteritems():
     vals += l
 pylab.hist(vals)
-pylab.xlabel('time-to-connectivity')
+pylab.xlabel('time to first connectivity')
+pylab.ylabel('Number of pods')
 pylab.show()
 
 # Calculate start times, shifted to account
@@ -143,18 +142,24 @@ min_y = ordered_end_times[0]
 max_y = ordered_end_times[-1]
 x = [(t-min_x) for t in start_times]
 
+# Print out some data.
+print "Time to start %s pods: %s" % (len(x), max_x - min_x)
+print "First-pod to full connectivity: %s" % (max_y - min_x)
+print "Last-pod to full connectivity: %s" % (max_y - max_x)
+
 # Plot data.
 pylab.plot(x, elapsed_times, 'ro')
-pylab.xlabel('time')
-pylab.ylabel('time to connect')
+pylab.xlabel('pod start time')
+pylab.ylabel('time to first connectivity')
 pylab.show()
 
-# Plot agent process time versus pod started time.
-pylab.plot(x, agent_process_times, "ro") 
-pylab.xlabel('time')
-pylab.ylabel('agent proc time')
-pylab.show()
-
+if agent_process_times:
+    # Plot agent process time versus pod started time.
+    pylab.plot(x, agent_process_times, "ro") 
+    pylab.xlabel('pod start time')
+    pylab.ylabel('Time spent in agent')
+    pylab.show()
+    
 # Plot queue length over time, compared with total 
 # API events and agent CPU usage.
 qlens = data_by_pod["qlengths"]
@@ -167,11 +172,6 @@ event_count = range(len(qlen_x))
 pylab.plot(qlen_x, event_count, "ro",
            qlen_x, qlens, "bs")
 
-pylab.xlabel('x')
-pylab.ylabel('queue length')
+pylab.xlabel('time')
+pylab.ylabel('Agent Queue Length')
 pylab.show()
-
-# Print out some data.
-print "Time to start %s pods: %s" % (len(x), max_x - min_x)
-print "First-pod to full connectivity: %s" % (max_y - min_x)
-print "Last-pod to full connectivity: %s" % (max_y - max_x)
