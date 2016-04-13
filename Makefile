@@ -24,7 +24,7 @@ wait-for-cluster:
 
 # Installs Kubernetes addons
 install-addons:
-	./kubectl create -f manifests/kube-system.yaml
+	./kubectl create -f manifests/namespaces/
 	./kubectl create -f manifests/addons/
 
 # Builds calico-cni binaries from submodule.

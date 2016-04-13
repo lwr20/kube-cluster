@@ -4,6 +4,7 @@ import matplotlib.pyplot as pylab
 import json
 import subprocess
 import re
+import datetime
 from dateutil import parser
 from subprocess import check_output
 
@@ -12,6 +13,7 @@ queue_time_re = re.compile("INFO \('default', '(.*)'\) time on the queue: ([0-9\
 proc_time_re = re.compile("INFO \('default', '(.*)'\) total process time: ([0-9]+\.[0-9]+)")
 start_re = re.compile("Started: ([0-9]+\.[0-9]+)")
 end_re = re.compile("Completed: ([0-9]+\.[0-9]+)")
+elapsed_re = re.compile("Elapsed: ([0-9]+\.[0-9]+)")
 time_re = re.compile("\d\d:\d\d:\d\d")
 qlen_re = re.compile("Pod: (.*) to queue \((.*)\) \((.*)\)")
 
@@ -70,10 +72,14 @@ end_times = []
 agent_process_times = []
 
 # For each pod, get its logs.
+i = 0
 for pod_name, pod in pods.iteritems():
     # Get node name for this pod.
     node_name = pod["spec"].get("nodeName", None)
     pod_id = "%s: %s" % (node_name, pod_name)
+
+    print "Getting logs for %s, #%s" % (pod_id, i)
+    i += 1
 
     try:
         logs = check_output(["kubectl", "logs", pod_name])
@@ -96,8 +102,15 @@ for pod_name, pod in pods.iteritems():
         failed.append((pod, logs, None))
         continue
 
+    try:
+        elapsed = float(elapsed_re.findall(logs)[0])
+    except IndexError:
+        print "No elapsed time for pod: %s" % pod_id
+        failed.append((pod, logs, None))
+        continue
+
     # Determine the elapsed time and store in the mapping dict.
-    elapsed = end_time - start_time 
+    # elapsed = end_time - start_time 
     times = elapsed_by_start_time.setdefault(start_time, [])
     times.append(elapsed)
 
@@ -142,15 +155,23 @@ min_y = ordered_end_times[0]
 max_y = ordered_end_times[-1]
 x = [(t-min_x) for t in start_times]
 
+# Calculate 99th percentile time to first ping.
+ordered_elapsed_times = sorted(elapsed_times)
+index = int(.99 * len(ordered_start_times))
+percentile = ordered_elapsed_times[index]
+average = sum(elapsed_times) / len(elapsed_times)
+
 # Print out some data.
 print "Time to start %s pods: %s" % (len(x), max_x - min_x)
 print "First-pod to full connectivity: %s" % (max_y - min_x)
 print "Last-pod to full connectivity: %s" % (max_y - max_x)
+print "99th percentile: %s" % percentile
+print "Average elapsed time: %s" % average
 
 # Plot data.
-pylab.plot(x, elapsed_times, 'ro')
-pylab.xlabel('pod start time')
-pylab.ylabel('time to first connectivity')
+pylab.plot(x, elapsed_times, 'bo')
+pylab.xlabel('time(s)')
+pylab.ylabel('Time to first connectivity (s)')
 pylab.show()
 
 if agent_process_times:
@@ -175,3 +196,9 @@ pylab.plot(qlen_x, event_count, "ro",
 pylab.xlabel('time')
 pylab.ylabel('Agent Queue Length')
 pylab.show()
+
+# Write to file.
+filename = "%s-pods-%s" % (len(elapsed_times), datetime.datetime.now())
+print "Writing results to file: %s" % filename
+with open("testdata/%s" % filename, "a") as f:
+    f.write(json.dumps(data_by_pod))

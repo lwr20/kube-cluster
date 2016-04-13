@@ -3,7 +3,7 @@ kind: ReplicationController
 metadata:
   name: getter 
 spec:
-  replicas: 0
+  replicas: 0 
   selector:
     role: getter 
   template:
@@ -14,3 +14,8 @@ spec:
       containers:
       - name: getter 
         image: caseydavenport/scale-tester
+        env:
+        - name: TIMEOUT
+          value: ".1"
+        - name: SLEEPTIME 
+          value: "0"
