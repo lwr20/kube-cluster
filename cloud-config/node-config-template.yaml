@@ -15,7 +15,7 @@ write_files:
               "type": "calico-ipam"
           },
           "policy": {
-              "type": "default-deny-inbound"
+              "type": "k8s"
           }
       }
 
