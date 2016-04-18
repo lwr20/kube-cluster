@@ -9,6 +9,7 @@ kubectl create -f dns-addon.yaml
 # Ensure isolation is on.
 echo "Enabling isolation on default namespace"
 kubectl annotate ns default "net.alpha.kubernetes.io/network-isolation=yes" --overwrite=true
+./policy create -f nginx-policy.yaml
 
 # Start the nginx ReplicationController and Service
 echo "Starting nginx Service"
