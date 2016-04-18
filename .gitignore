@@ -7,3 +7,6 @@ kubectl
 calicoctl
 timings
 .idea
+*.png
+env/
+*.swp
