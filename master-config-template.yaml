@@ -352,8 +352,8 @@ coreos:
         ExecStartPre=-/usr/bin/docker kill registry
         ExecStartPre=-/usr/bin/docker rm registry
         ExecStartPre=-/usr/bin/docker pull registry:2
-        ExecStartPre=-/usr/bin/docker pull calico/node:v0.18.0
-        ExecStartPre=-/usr/bin/docker tag calico/node:v0.18.0 kube-scale-master:5000/calico-node
+        ExecStartPre=-/usr/bin/docker pull lwr20/calico-node
+        ExecStartPre=-/usr/bin/docker tag lwr20/calico-node kube-scale-master:5000/calico-node
         ExecStart=/usr/bin/docker run -p 5000:5000 --name registry registry:2
         ExecStartPost=/bin/sleep 5
         ExecStartPost=/usr/bin/docker push kube-scale-master:5000/calico-node
