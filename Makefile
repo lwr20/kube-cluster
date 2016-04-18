@@ -72,7 +72,7 @@ gce-create: kubectl calicoctl
   	--local-ssd interface=scsi \
   	--metadata-from-file user-data=master-config-template.yaml
 
-  	gcloud compute instances create \
+	gcloud compute instances create \
   	${ETCD_NAMES} \
   	--image-project coreos-cloud \
   	--image coreos-alpha-1010-1-0-v20160407 \
@@ -80,14 +80,14 @@ gce-create: kubectl calicoctl
   	--local-ssd interface=scsi \
   	--metadata-from-file user-data=etcd-config-template.yaml
 
-  	gcloud compute instances create \
+	gcloud compute instances create \
   	${NODE_NAMES} \
   	--image-project coreos-cloud \
   	--image coreos-alpha-1010-1-0-v20160407 \
   	--machine-type ${NODE_INSTANCE_TYPE} \
   	--metadata-from-file user-data=node-config-template.yaml \
-	--no-address \
-	--tags no-ip
+  	--no-address \
+  	--tags no-ip
 
 	make --no-print-directory gce-config-ssh
 	make --no-print-directory gce-forward-ports
