@@ -3,16 +3,18 @@ CLUSTER_SIZE := 2
 GCE_REGION=us-central1-b
 MASTER_INSTANCE_TYPE=n1-standard-32
 NODE_INSTANCE_TYPE=n1-highcpu-4
+ETCD_INSTANCE_TYPE=n1-standard-16
 
 # Generate node names.
 NODE_NUMBERS := $(shell seq -f '%02.0f' 1 ${CLUSTER_SIZE})
 NODE_NAMES := $(addprefix kube-scale-,${NODE_NUMBERS})
+ETCD_NAMES = kube-scale-etcd-01 kube-scale-etcd-02 kube-scale-etcd-03
 
 LOG_RETRIEVAL_TARGETS := $(addprefix job,${NODE_NUMBERS})
 PODS := 10000
 
 kubectl:
-	wget http://storage.googleapis.com/kubernetes-release/release/v1.2.0/bin/darwin/amd64/kubectl
+	wget http://storage.googleapis.com/kubernetes-release/release/v1.2.0/bin/linux/amd64/kubectl
 	chmod +x kubectl
 
 calicoctl:
@@ -70,7 +72,15 @@ gce-create: kubectl calicoctl
   	--local-ssd interface=scsi \
   	--metadata-from-file user-data=master-config-template.yaml
 
-	gcloud compute instances create \
+  	gcloud compute instances create \
+  	${ETCD_NAMES} \
+  	--image-project coreos-cloud \
+  	--image coreos-alpha-1010-1-0-v20160407 \
+  	--machine-type ${ETCD_INSTANCE_TYPE} \
+  	--local-ssd interface=scsi \
+  	--metadata-from-file user-data=etcd-config-template.yaml
+
+  	gcloud compute instances create \
   	${NODE_NAMES} \
   	--image-project coreos-cloud \
   	--image coreos-alpha-1010-1-0-v20160407 \
