@@ -1,6 +1,6 @@
 # Cluster parameters go here.
 CLUSTER_SIZE := 2
-GCE_REGION=us-central1-b
+GCE_REGION=us-central1-f
 MASTER_INSTANCE_TYPE=n1-standard-32
 NODE_INSTANCE_TYPE=n1-highcpu-4
 ETCD_INSTANCE_TYPE=n1-standard-16
@@ -72,13 +72,7 @@ gce-create: kubectl calicoctl
   	--local-ssd interface=scsi \
   	--metadata-from-file user-data=master-config-template.yaml
 
-	gcloud compute instances create \
-  	${ETCD_NAMES} \
-  	--image-project coreos-cloud \
-  	--image coreos-alpha-1010-1-0-v20160407 \
-  	--machine-type ${ETCD_INSTANCE_TYPE} \
-  	--local-ssd interface=scsi \
-  	--metadata-from-file user-data=etcd-config-template.yaml
+	make --no-print-directory gce-create-etcd
 
 	gcloud compute instances create \
   	${NODE_NAMES} \
@@ -92,6 +86,31 @@ gce-create: kubectl calicoctl
 	make --no-print-directory gce-config-ssh
 	make --no-print-directory gce-forward-ports
 	#make --no-print-directory apply-node-labels
+
+gce-create-etcd:
+	gcloud compute instances create \
+  	kube-scale-etcd-01 \
+  	--image-project coreos-cloud \
+  	--image coreos-alpha-1010-1-0-v20160407 \
+  	--machine-type ${ETCD_INSTANCE_TYPE} \
+  	--local-ssd interface=scsi \
+  	--metadata-from-file user-data=etcd-config-01.yaml
+
+	gcloud compute instances create \
+  	kube-scale-etcd-02 \
+  	--image-project coreos-cloud \
+  	--image coreos-alpha-1010-1-0-v20160407 \
+  	--machine-type ${ETCD_INSTANCE_TYPE} \
+  	--local-ssd interface=scsi \
+  	--metadata-from-file user-data=etcd-config-02.yaml
+
+	gcloud compute instances create \
+  	kube-scale-etcd-03 \
+  	--image-project coreos-cloud \
+  	--image coreos-alpha-1010-1-0-v20160407 \
+  	--machine-type ${ETCD_INSTANCE_TYPE} \
+  	--local-ssd interface=scsi \
+  	--metadata-from-file user-data=etcd-config-03.yaml
 
 gce-cleanup:
 	gcloud compute instances list -r 'kube-scale.*' |tail -n +2 |cut -f1 -d' ' |xargs gcloud compute instances delete
