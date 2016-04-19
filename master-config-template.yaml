@@ -65,7 +65,7 @@ write_files:
             env:
               # Modify ETCD_ENDPOINTS to match your etcd cluster.
               - name: ETCD_ENDPOINTS
-                value: "http://kube-scale-etcd-01:2379,http://kube-scale-etcd-02:2379,http://kube-scale-etcd-03:2379"
+                value: "http://kube-scale-etcd-01.c.unique-caldron-775.internal:2379,http://kube-scale-etcd-02.c.unique-caldron-775.internal:2379,http://kube-scale-etcd-03.c.unique-caldron-775.internal:2379"
               - name: K8S_API
                 value: "http://127.0.0.1:8080"
               - name: LEADER_ELECTION 
