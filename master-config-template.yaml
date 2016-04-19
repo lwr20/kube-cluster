@@ -18,7 +18,7 @@ write_files:
       {
           "name": "calico-k8s-network",
           "type": "calico",
-          "etcd_endpoints": "kube-scale-etcd-01:2379,kube-scale-etcd-02:2379,kube-scale-etcd-03:2379",
+          "etcd_endpoints": "http://kube-scale-etcd-01:2379,http://kube-scale-etcd-02:2379,http://kube-scale-etcd-03:2379",
           "log_level": "info",
           "ipam": {
               "type": "calico-ipam"
